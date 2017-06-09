@@ -5,11 +5,13 @@ import PackageDescription
 let package = Package(
   name: "swiftsocket",
   dependencies: [
+    .package(url: "https://github.com/ReactiveCocoa/ReactiveSwift.git", from: "1.0.0"),
   ],
   targets: [
     .target(
       name: "swiftsocket",
       dependencies: [
+        "ReactiveSwift",
         "support",
       ]
     ),
