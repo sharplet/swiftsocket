@@ -17,8 +17,10 @@ guard listen(sock, 128) == 0 else { die("unable to listen on socket \(sock)") }
 log("listening on port \(port)")
 
 let listenQueue = DispatchQueue.global(qos: .userInteractive)
+let readQueue = DispatchQueue.global(qos: .userInitiated)
+
 let listener = DispatchSource.makeReadSource(fileDescriptor: sock, queue: listenQueue)
-listener.setEventHandler { acceptConnection(sock) }
+listener.setEventHandler { acceptConnection(sock, target: readQueue) }
 listener.resume()
 
 dispatchMain()
