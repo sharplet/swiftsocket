@@ -9,6 +9,12 @@ let package = Package(
   targets: [
     .target(
       name: "swiftsocket",
+      dependencies: [
+        "support",
+      ]
+    ),
+    .target(
+      name: "support",
       dependencies: []
     ),
   ]
