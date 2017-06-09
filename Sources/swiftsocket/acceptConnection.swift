@@ -1,3 +1,4 @@
+import Darwin.C
 import Dispatch
 import support
 
@@ -17,12 +18,39 @@ func acceptConnection(_ sock: Int32, target: DispatchQueue) {
     fileDescriptor: connection,
     queue: connectionQueue)
 
+  let length = 256
+  let buffer = UnsafeMutablePointer<CChar>.allocate(capacity: length)
+  var current = 0
+  var end = 0
+
   readSource.setEventHandler {
-    log("read event on \(label)")
-    readSource.cancel()
+    if current == end {
+      current = 0
+      let available = Int(readSource.data)
+      let limit = min(length - current, available)
+      end = read(connection, buffer, limit)
+    }
+
+    switch end {
+    case ..<0:
+      log("\(label): read failed")
+      readSource.cancel()
+    case 0:
+      log("\(label): finished")
+      readSource.cancel()
+    default:
+      let step = write(connection, buffer + current, end - current)
+      guard step >= 0 else {
+        log("\(label): write failed")
+        readSource.cancel()
+        return
+      }
+      current += step
+    }
   }
 
   readSource.setCancelHandler {
+    buffer.deallocate(capacity: length)
     swiftsocket_close(connection)
   }
 
