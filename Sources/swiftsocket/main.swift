@@ -1,4 +1,7 @@
 import Dispatch
+import Foundation
+import ReactiveSwift
+import Result
 import Socket
 
 let listenQueue = DispatchQueue.global(qos: .userInteractive)
@@ -13,10 +16,13 @@ func handleConnection(_ request: ConnectionRequest) {
   log("new connection")
 
   connection.read()
-    .flatMap(.concat, connection.write)
-    .startWithCompleted {
+    .flatMap(.latest, connection.write)
+    .on(failed: {
+      log("connection terminated: \($0.message)")
+    }, completed: {
       log("connection finished")
-    }
+    })
+    .start()
 }
 
 let arguments = CommandLine.arguments.dropFirst()
