@@ -9,6 +9,8 @@ public final class Connection {
   private let queue: DispatchQueue
   private var refcount = 0
 
+  private var reader: SignalProducer<Data, SocketError>?
+
   init?(socket: Int32, target: DispatchQueue) {
     connection = swiftsocket_accept(socket)
     guard connection >= 0 else { return nil }
@@ -16,6 +18,10 @@ public final class Connection {
   }
 
   public func read() -> SignalProducer<Data, SocketError> {
+    return reader ??= makeReader()
+  }
+
+  private func makeReader() -> SignalProducer<Data, SocketError> {
     guard let connection = connection else {
       preconditionFailure("tried to read from closed connection")
     }
