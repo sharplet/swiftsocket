@@ -24,6 +24,8 @@ func acceptConnection(_ sock: Int32, target: DispatchQueue) {
   var end = 0
 
   readSource.setEventHandler {
+    log("\(label): event: \(readSource.data) bytes available")
+
     if current == end {
       current = 0
       let available = Int(readSource.data)
@@ -39,12 +41,18 @@ func acceptConnection(_ sock: Int32, target: DispatchQueue) {
       log("\(label): finished")
       readSource.cancel()
     default:
+      if current == 0 {
+        log("\(label): read \(end) bytes")
+      }
+
       let step = write(connection, buffer + current, end - current)
       guard step >= 0 else {
         log("\(label): write failed")
         readSource.cancel()
         return
       }
+
+      log("\(label): wrote \(step) bytes")
       current += step
     }
   }

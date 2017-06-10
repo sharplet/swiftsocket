@@ -11,6 +11,12 @@ let package = Package(
     .target(
       name: "swiftsocket",
       dependencies: [
+        "Socket",
+      ]
+    ),
+    .target(
+      name: "Socket",
+      dependencies: [
         "ReactiveSwift",
         "support",
       ]
