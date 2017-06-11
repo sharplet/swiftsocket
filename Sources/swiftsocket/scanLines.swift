@@ -25,7 +25,7 @@ extension SignalProducer where Value == Data {
 
         data.append(chunk)
 
-        while true {
+        while data.count > 0 {
           guard let lineSeparator = data.range(of: separator.bytes, in: position..<data.endIndex) else {
             position = data.index(before: data.endIndex)
             break
