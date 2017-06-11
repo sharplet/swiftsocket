@@ -16,15 +16,15 @@ public final class Socket {
     let socket = swiftsocket_create()
 
     guard socket >= 0 else {
-      throw SocketError.make("unable to create socket")
+      throw SocketError.make("Unable to create socket")
     }
 
     guard swiftsocket_bind_any(socket, Int32(port)) == 0 else {
-      throw SocketError.make("unable to bind socket \(socket)")
+      throw SocketError.make("Unable to bind socket")
     }
 
     guard Darwin.listen(socket, 128) == 0 else {
-      throw SocketError.make("unable to listen on socket \(socket)")
+      throw SocketError.make("Unable to listen on socket")
     }
 
     let listener = DispatchSource.makeReadSource(fileDescriptor: socket, queue: queue)

@@ -60,7 +60,7 @@ final class Writer {
 
       switch written {
       case ..<0:
-        observer.send(value: .writeFailed(.make("socket write failed")))
+        observer.send(value: .writeFailed(.make("Socket write failed")))
       default:
         buffer.removeFirst(written)
       }

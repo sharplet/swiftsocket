@@ -33,7 +33,7 @@ final class Reader {
 
         switch lastRead {
         case ..<0:
-          observer.send(error: .make("socket read failed"))
+          observer.send(error: .make("Socket read failed"))
         case 0:
           observer.send(value: Data())
           observer.sendCompleted()

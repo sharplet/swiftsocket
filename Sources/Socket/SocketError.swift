@@ -8,3 +8,10 @@ public struct SocketError: Error {
     return SocketError(message: message, errno: Darwin.errno)
   }
 }
+
+extension SocketError: CustomStringConvertible {
+  public var description: String {
+    let underlying = String(cString: strerror(errno))
+    return "\(message) - \(underlying)"
+  }
+}

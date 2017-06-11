@@ -29,11 +29,13 @@ func handleConnection(_ request: ConnectionRequest) {
 let arguments = CommandLine.arguments.dropFirst()
 let port = arguments.first.flatMap { Int($0) } ?? 8000
 
+let socket: Socket
 do {
-  let socket = try Socket.listen(port: port, queue: listenQueue, handler: handleConnection)
+  socket = try Socket.listen(port: port, queue: listenQueue, handler: handleConnection)
   log("listening on port \(port)")
   dispatchMain()
 } catch {
   let message = String(describing: error)
-  log(message)
+  print("fatal: \(message)")
+  exit(1)
 }
