@@ -49,11 +49,7 @@ final class Writer {
     source.setCancelHandler { _ = connection }
 
     source.setEventHandler { [buffer, observer, source] in
-      guard buffer.count > 0 else {
-        source.suspend()
-        observer.send(value: .writeFinished)
-        return
-      }
+      assert(buffer.count > 0)
 
       let available = Int(source.data)
       let limit = min(available, buffer.count)
@@ -66,10 +62,12 @@ final class Writer {
         observer.send(value: .writeFailed(.make("Socket write failed")))
       default:
         buffer.removeFirst(written)
+        if buffer.isEmpty {
+          source.suspend()
+          observer.send(value: .writeFinished)
+        }
       }
     }
-
-    source.resume()
   }
 }
 
