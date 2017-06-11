@@ -22,8 +22,11 @@ final class Writer {
         return
       }
 
+      if buffer.isEmpty {
+        defer { source.resume() }
+      }
+
       buffer.append(data)
-      defer { source.resume() }
 
       let disposable = events.observeValues { event in
         switch event {
@@ -71,10 +74,14 @@ final class Writer {
 }
 
 private final class Buffer {
-  var data = Data()
+  private var data = Data()
 
   var count: Int {
     return data.count
+  }
+
+  var isEmpty: Bool {
+    return data.isEmpty
   }
 
   func append(_ data: Data) {
