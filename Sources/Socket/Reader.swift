@@ -8,13 +8,13 @@ final class Reader {
     return reader
   }
 
-  init(_ connection: Int32, capacity: Int, queue: DispatchQueue, completionHandler: @escaping () -> Void) {
+  init(_ connection: Connection.Handle, capacity: Int, queue: DispatchQueue) {
     reader = SignalProducer { observer, lifetime in
       let source = DispatchSource.makeReadSource(
-        fileDescriptor: connection,
+        fileDescriptor: connection.fileDescriptor,
         queue: queue)
 
-      source.setCancelHandler(handler: completionHandler)
+      source.setCancelHandler { _ = connection }
       lifetime.observeEnded(source.cancel)
 
       let buffer = UnsafeMutablePointer<CChar>.allocate(capacity: 256)
@@ -23,7 +23,7 @@ final class Reader {
       var position = 0
       var lastRead = 0
 
-      source.setEventHandler {
+      source.setEventHandler { [connection = connection.fileDescriptor] in
         if position == lastRead {
           position = 0
           let available = Int(source.data)

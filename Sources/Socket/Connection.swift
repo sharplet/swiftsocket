@@ -5,8 +5,8 @@ import ReactiveSwift
 import support
 
 public final class Connection {
-  private final class Handle {
-    var fileDescriptor: Int32
+  final class Handle {
+    let fileDescriptor: Int32
 
     init(_ connection: Int32) {
       fileDescriptor = connection
@@ -17,7 +17,6 @@ public final class Connection {
     }
   }
 
-  private let handle: Unmanaged<Handle>
   private let reader: Reader
   private let writer: Writer
 
@@ -25,13 +24,11 @@ public final class Connection {
     let connection = swiftsocket_accept(socket)
     guard connection >= 0 else { return nil }
 
-    handle = Unmanaged
-      .passRetained(Handle(connection))
-      .retain()
+    let handle = Handle(connection)
 
     let queue = DispatchQueue(label: "swiftsocket.connection.\(connection)", target: target)
-    reader = Reader(connection, capacity: 256, queue: queue, completionHandler: handle.release)
-    writer = Writer(connection, queue: queue, completionHandler: handle.release)
+    reader = Reader(handle, capacity: 256, queue: queue)
+    writer = Writer(handle, queue: queue)
   }
 
   public func read() -> SignalProducer<Data, SocketError> {

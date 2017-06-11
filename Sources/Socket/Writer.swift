@@ -4,51 +4,88 @@ import ReactiveSwift
 import Result
 
 final class Writer {
-  private let source: DispatchSourceWrite
-  private var writer: SignalProducer<Never, SocketError>!
-  private var data = Data()
-
-  func write(_ data: Data) -> SignalProducer<Never, SocketError> {
-    guard data.count > 0 else {
-      source.cancel()
-      return .empty
-    }
-
-    return writer.on(
-      starting: { self.data.append(data) },
-      started: source.resume
-    )
+  private enum Event {
+    case writeFinished
+    case writeFailed(SocketError)
   }
 
-  init(_ connection: Int32, queue: DispatchQueue, completionHandler: @escaping () -> Void) {
-    source = DispatchSource.makeWriteSource(
-      fileDescriptor: connection,
-      queue: queue)
+  private var buffer = Buffer()
+  private let source: DispatchSourceWrite
+  private let (events, observer) = Signal<Event, NoError>.pipe()
 
-    writer = SignalProducer<Never, SocketError> { [weak self, source] observer, lifetime in
-      source.setCancelHandler(handler: completionHandler)
-      lifetime.observeEnded(source.cancel)
+  func write(_ data: Data) -> SignalProducer<Never, SocketError> {
+    return SignalProducer { [buffer, events, source] observer, lifetime in
+      guard data.count > 0 else {
+        source.cancel()
+        source.resume()
+        observer.sendCompleted()
+        return
+      }
 
-      source.setEventHandler {
-        guard let `self` = self else { source.cancel(); return }
-        let data = self.data
-        guard data.count > 0 else { source.suspend(); return }
+      buffer.append(data)
+      defer { source.resume() }
 
-        let available = Int(source.data)
-        let limit = min(data.count, available)
-        let written = data.withUnsafeBytes { buffer in
-          Darwin.write(connection, buffer, limit)
-        }
-
-        switch written {
-        case ..<0:
-          observer.send(error: .make("socket write failed"))
-        case 0:
+      let disposable = events.observeValues { event in
+        switch event {
+        case .writeFinished:
           observer.sendCompleted()
-        default:
-          self.data.removeFirst(written)
+        case .writeFailed(let error):
+          observer.send(error: error)
         }
       }
-    }.replayLazily(upTo: 1)
+
+      lifetime.observeEnded { disposable?.dispose() }
+    }
+  }
+
+  init(_ connection: Connection.Handle, queue: DispatchQueue) {
+    source = DispatchSource.makeWriteSource(
+      fileDescriptor: connection.fileDescriptor,
+      queue: queue)
+
+    source.setCancelHandler { _ = connection }
+
+    source.setEventHandler { [buffer, observer, source] in
+      guard buffer.count > 0 else {
+        source.suspend()
+        observer.send(value: .writeFinished)
+        return
+      }
+
+      let available = Int(source.data)
+      let limit = min(available, buffer.count)
+      let written = buffer.withUnsafeBytes { buffer in
+        Darwin.write(connection.fileDescriptor, buffer, limit)
+      }
+
+      switch written {
+      case ..<0:
+        observer.send(value: .writeFailed(.make("socket write failed")))
+      default:
+        buffer.removeFirst(written)
+      }
+    }
+
+    source.resume()
+  }
+}
+
+private final class Buffer {
+  var data = Data()
+
+  var count: Int {
+    return data.count
+  }
+
+  func append(_ data: Data) {
+    self.data.append(data)
+  }
+
+  func removeFirst(_ n: Int) {
+    data.removeFirst(n)
+  }
+
+  func withUnsafeBytes<Result>(_ body: (UnsafePointer<Int8>) throws -> Result) rethrows -> Result {
+    return try data.withUnsafeBytes(body)
   }
 }
