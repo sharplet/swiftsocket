@@ -19,6 +19,7 @@ extension SignalProducer where Value == Data {
           observer.sendCompleted()
           return
         case let .value(value):
+          guard value.count > 0 else { return }
           chunk = value
         }
 
