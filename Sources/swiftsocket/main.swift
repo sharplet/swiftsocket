@@ -16,6 +16,7 @@ func handleConnection(_ request: ConnectionRequest) {
   log("new connection")
 
   connection.read()
+    .scanLines(separatedBy: .crlf)
     .flatMap(.latest, connection.write)
     .on(failed: {
       log("connection terminated: \($0.message)")
