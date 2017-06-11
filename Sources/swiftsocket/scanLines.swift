@@ -24,17 +24,19 @@ extension SignalProducer where Value == Data {
 
         data.append(chunk)
 
-        guard let lineSeparator = data.range(of: separator.bytes, in: position..<data.endIndex) else {
-          position = data.index(before: data.endIndex)
-          return
+        while true {
+          guard let lineSeparator = data.range(of: separator.bytes, in: position..<data.endIndex) else {
+            position = data.index(before: data.endIndex)
+            break
+          }
+
+          let line = data.startIndex..<lineSeparator.upperBound
+
+          observer.send(value: data[line])
+
+          data.removeSubrange(line)
+          position = data.startIndex
         }
-
-        let line = data.startIndex..<lineSeparator.upperBound
-
-        observer.send(value: data[line])
-
-        data.removeSubrange(line)
-        position = data.startIndex
       }
     }
   }
