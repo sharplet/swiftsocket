@@ -16,8 +16,6 @@ final class Writer {
   func write(_ data: Data) -> SignalProducer<Never, SocketError> {
     return SignalProducer { [buffer, events, source] observer, lifetime in
       guard data.count > 0 else {
-        source.cancel()
-        source.resume()
         observer.sendCompleted()
         return
       }

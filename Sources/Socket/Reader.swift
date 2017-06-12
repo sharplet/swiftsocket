@@ -35,7 +35,6 @@ final class Reader {
         case ..<0:
           observer.send(error: .make("Socket read failed"))
         case 0:
-          observer.send(value: Data())
           observer.sendCompleted()
         default:
           let data = Data(
