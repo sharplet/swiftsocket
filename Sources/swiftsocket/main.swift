@@ -13,15 +13,15 @@ func handleConnection(_ request: ConnectionRequest) {
     return
   }
 
-  log("new connection")
+  log("[connection] accepted")
 
   connection.read()
     .scanLines(separatedBy: .crlf)
-    .flatMap(.latest, connection.write)
+    .flatMap(.concat, connection.write)
     .on(failed: {
-      log("connection terminated: \($0.message)")
+      log("[connection] terminated: \($0)")
     }, completed: {
-      log("connection finished")
+      log("[connection] finished")
     })
     .start()
 }

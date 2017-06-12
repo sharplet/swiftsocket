@@ -28,12 +28,16 @@ final class Writer {
 
       buffer.append(data)
 
-      let disposable = events.observeValues { event in
+      let disposable = events.observe { event in
         switch event {
-        case .writeFinished:
+        case .value(.writeFinished), .completed:
           observer.sendCompleted()
-        case .writeFailed(let error):
+        case let .value(.writeFailed(error)):
           observer.send(error: error)
+        case .interrupted:
+          observer.sendInterrupted()
+        case .failed:
+          break
         }
       }
 
@@ -53,26 +57,44 @@ final class Writer {
 
       let available = Int(source.data)
       let limit = min(available, buffer.count)
-      let written = buffer.withUnsafeBytes { buffer in
-        Darwin.write(connection.fileDescriptor, buffer, limit)
-      }
 
-      switch written {
-      case ..<0:
-        observer.send(value: .writeFailed(.make("Socket write failed")))
-      default:
-        buffer.removeFirst(written)
-        if buffer.isEmpty {
-          source.suspend()
-          observer.send(value: .writeFinished)
-        }
+      let result = buffer.write(upTo: limit, on: connection.fileDescriptor)
+
+      switch result {
+      case let .failed(error):
+        observer.send(value: .writeFailed(error))
+      case .bytesRemaining:
+        break
+      case .complete:
+        source.suspend()
+        observer.send(value: .writeFinished)
+      case .finalized:
+        source.cancel()
+        observer.sendCompleted()
       }
+    }
+  }
+
+  deinit {
+    if buffer.isEmpty {
+      source.cancel()
+      source.resume()
+    } else {
+      buffer.finalize()
     }
   }
 }
 
 private final class Buffer {
+  enum WriteResult {
+    case bytesRemaining
+    case complete
+    case finalized
+    case failed(SocketError)
+  }
+
   private var data = Data()
+  private var shouldFinalize = false
 
   var count: Int {
     return data.count
@@ -86,11 +108,33 @@ private final class Buffer {
     self.data.append(data)
   }
 
-  func removeFirst(_ n: Int) {
-    data.removeFirst(n)
+  func finalize() {
+    precondition(shouldFinalize == false, "buffer finalized twice")
+    shouldFinalize = true
   }
 
-  func withUnsafeBytes<Result>(_ body: (UnsafePointer<Int8>) throws -> Result) rethrows -> Result {
-    return try data.withUnsafeBytes(body)
+  func write(upTo count: Int, on fileDescriptor: Int32) -> WriteResult {
+    let written = data.withUnsafeBytes { buffer in
+      Darwin.write(fileDescriptor, buffer, count)
+    }
+
+    switch written {
+    case ..<0:
+      return .failed(.make("Socket write failed"))
+    default:
+      if written > 0 {
+        data.removeFirst(written)
+      }
+
+      if isEmpty {
+        if shouldFinalize {
+          return .finalized
+        } else {
+          return .complete
+        }
+      } else {
+        return .bytesRemaining
+      }
+    }
   }
 }
