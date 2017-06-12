@@ -1,7 +1,4 @@
 import Dispatch
-import Foundation
-import ReactiveSwift
-import Result
 import Socket
 
 let listenQueue = DispatchQueue.global(qos: .userInteractive)
