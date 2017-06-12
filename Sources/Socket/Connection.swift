@@ -20,9 +20,9 @@ public final class Connection {
   private let reader: Reader
   private let writer: Writer
 
-  init?(socket: Int32, target: DispatchQueue) {
+  init(socket: Int32, target: DispatchQueue) throws {
     let connection = swiftsocket_accept(socket)
-    guard connection >= 0 else { return nil }
+    guard connection >= 0 else { throw SocketError.make("Unable to accept connection") }
 
     let handle = Handle(connection)
 

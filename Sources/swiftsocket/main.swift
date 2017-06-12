@@ -8,12 +8,14 @@ let listenQueue = DispatchQueue.global(qos: .userInteractive)
 let connectionQueue = DispatchQueue.global(qos: .userInitiated)
 
 func handleConnection(_ request: ConnectionRequest) {
-  guard let connection = request.accept(target: connectionQueue) else {
-    log("failed to connect")
+  let connection: Connection
+  do {
+    connection = try request.accept(target: connectionQueue)
+    log("[connection] accepted")
+  } catch {
+    log("[connection] failed: \(error)")
     return
   }
-
-  log("[connection] accepted")
 
   connection.read()
     .scanLines(separatedBy: .crlf)
