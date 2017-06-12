@@ -4,8 +4,8 @@ import ReactiveSwift
 extension SignalProducer where Value == Data {
   func scanLines(separatedBy separator: LineSeparator) -> SignalProducer<Data, Error> {
     return SignalProducer { observer, disposable in
-      var data = Data()
-      var position = data.startIndex
+      var data: Data!
+      var position: Data.Index!
 
       self.start { event in
         let chunk: Data
@@ -15,7 +15,9 @@ extension SignalProducer where Value == Data {
           observer.action(event)
           return
         case .completed:
-          observer.send(value: data)
+          if data != nil {
+            observer.send(value: data)
+          }
           observer.sendCompleted()
           return
         case let .value(value):
@@ -23,7 +25,12 @@ extension SignalProducer where Value == Data {
           chunk = value
         }
 
-        data.append(chunk)
+        if data == nil {
+          data = chunk
+          position = data.startIndex
+        } else {
+          data.append(chunk)
+        }
 
         while data.count > 0 {
           guard let lineSeparator = data.range(of: separator.bytes, in: position..<data.endIndex) else {
