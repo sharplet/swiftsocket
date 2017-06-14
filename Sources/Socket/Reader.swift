@@ -28,7 +28,7 @@ final class Reader {
           position = 0
           let available = Int(source.data)
           let limit = min(capacity - position, available)
-          lastRead = Darwin.read(connection, buffer, limit)
+          lastRead = Darwin.read(connection, buffer + position, limit)
         }
 
         switch lastRead {
