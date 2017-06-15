@@ -18,6 +18,7 @@ final class Writer {
         .write(data)
         .start(observer)
 
+      lifetime.observeEnded { _ = self }
       lifetime.observeEnded(disposable.dispose)
     }
   }
@@ -66,13 +67,18 @@ private final class Buffer {
       let disposable = self.events.observe { event in
         switch event {
         case let .value((eventId, .complete)) where eventId == id:
+          fallthrough
+        case .completed:
           observer.sendCompleted()
 
         case let .value((eventId, .failed(error))) where eventId == id:
           observer.send(error: error)
 
-        default:
+        case .value:
           break
+
+        case .interrupted:
+          observer.sendInterrupted()
         }
       }
 

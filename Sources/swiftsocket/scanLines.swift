@@ -15,7 +15,7 @@ extension SignalProducer where Value == Data {
           observer.action(event)
           return
         case .completed:
-          if data != nil {
+          if data != nil, data.count > 0 {
             observer.send(value: data)
           }
           observer.sendCompleted()
