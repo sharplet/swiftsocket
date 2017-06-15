@@ -37,10 +37,7 @@ final class Reader {
         case 0:
           observer.sendCompleted()
         default:
-          let data = Data(
-            bytesNoCopy: buffer + position,
-            count: lastRead - position,
-            deallocator: .none)
+          let data = Data(bytes: buffer + position, count: lastRead)
 
           position += lastRead
 
