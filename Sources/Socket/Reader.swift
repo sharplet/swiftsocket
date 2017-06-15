@@ -33,6 +33,8 @@ final class Reader {
 
         switch lastRead {
         case ..<0:
+          // Data couldn't be read immediately, but we should try again
+          guard errno != EAGAIN, errno != EINTR else { return }
           observer.send(error: .make("Socket read failed"))
         case 0:
           observer.sendCompleted()

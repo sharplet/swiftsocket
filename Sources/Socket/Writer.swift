@@ -93,6 +93,8 @@ private final class Buffer {
 
     switch written {
     case ..<0:
+      // Data couldn't be written immediately, but we should try again
+      guard errno != EAGAIN, errno != EINTR else { return }
       observer.send(value: (id, .failed(.make("Socket write failed"))))
     default:
       if written == count {
