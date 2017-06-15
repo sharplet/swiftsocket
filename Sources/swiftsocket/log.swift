@@ -1,7 +1,8 @@
+import Darwin.C
 import Dispatch
 
-func log(_ message: String) {
+func log(_ message: String, to file: UnsafeMutablePointer<FILE> = stderr) {
   DispatchQueue.main.async {
-    print(message)
+    fputs("\(message)\n", stderr)
   }
 }

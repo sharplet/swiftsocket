@@ -35,6 +35,6 @@ do {
   dispatchMain()
 } catch {
   let message = String(describing: error)
-  print("fatal: \(message)")
+  fputs("fatal: \(message)\n", stderr)
   exit(1)
 }
