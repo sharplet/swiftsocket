@@ -34,8 +34,6 @@ final class Writer {
           observer.send(error: error)
         case .interrupted:
           observer.sendInterrupted()
-        case .failed:
-          break
         }
       }
 
