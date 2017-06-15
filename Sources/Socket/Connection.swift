@@ -27,7 +27,7 @@ public final class Connection {
     let handle = Handle(connection)
 
     let queue = DispatchQueue(label: "swiftsocket.connection.\(connection)", target: target)
-    reader = Reader(handle, capacity: 256, queue: queue)
+    reader = Reader(handle, capacity: 8192, queue: queue)
     writer = Writer(handle, queue: queue)
   }
 
