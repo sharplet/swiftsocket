@@ -17,7 +17,7 @@ final class Reader {
       source.setCancelHandler { _ = connection }
       lifetime.observeEnded(source.cancel)
 
-      let buffer = UnsafeMutablePointer<CChar>.allocate(capacity: 256)
+      let buffer = UnsafeMutablePointer<CChar>.allocate(capacity: capacity)
       lifetime.observeEnded { buffer.deallocate(capacity: capacity) }
 
       var position = 0
