@@ -8,18 +8,17 @@ final class Writer {
   private let source: DispatchSourceWrite
 
   func write(_ data: Data) -> SignalProducer<Never, SocketError> {
-    return SignalProducer { observer, lifetime in
+    return SignalProducer { observer, disposable in
       guard data.count > 0 else {
         observer.sendCompleted()
         return
       }
 
-      let disposable = self.buffer
+      disposable += self.buffer
         .write(data)
         .start(observer)
 
-      lifetime.observeEnded { _ = self }
-      lifetime.observeEnded(disposable.dispose)
+      disposable += { _ = self }
     }
   }
 
@@ -59,12 +58,12 @@ private final class Buffer {
   }
 
   func write(_ data: Data) -> SignalProducer<Never, SocketError> {
-    return SignalProducer { observer, lifetime in
+    return SignalProducer { observer, disposable in
       let id = self.counter
       self.counter += 1
       self.queue.append((id, data))
 
-      let disposable = self.events.observe { event in
+      disposable += self.events.observe { event in
         switch event {
         case let .value((eventId, .complete)) where eventId == id:
           fallthrough
@@ -81,8 +80,6 @@ private final class Buffer {
           observer.sendInterrupted()
         }
       }
-
-      lifetime.observeEnded { disposable?.dispose() }
     }
   }
 
