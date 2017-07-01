@@ -6,7 +6,7 @@ let package = Package(
   name: "swiftsocket",
   dependencies: [
     .package(url: "https://github.com/ReactiveCocoa/ReactiveSwift.git", from: "1.0.0"),
-    .package(url: "https://github.com/Quick/Quick.git", from: "1.1.0"),
+    .package(url: "https://github.com/Quick/Quick.git", .branch("xcode-9-fix")),
     .package(url: "https://github.com/Quick/Nimble.git", from: "7.0.1"),
   ],
   targets: [
