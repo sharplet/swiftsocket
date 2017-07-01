@@ -7,6 +7,17 @@ public struct CircularBuffer<Element> {
     } as! Buffer
   }
 
+  public mutating func readFirst() -> Element? {
+    return buffer.modify { header, buffer in
+      guard header.count > 0 else { return nil }
+      defer {
+        header.startIndex += 1
+        header.count -= 1
+      }
+      return self[startIndex]
+    }
+  }
+
   public mutating func write(_ elements: [Element]) -> Int? {
     let capacity = buffer.capacity
     return buffer.modify { header, buffer in
@@ -16,6 +27,10 @@ public struct CircularBuffer<Element> {
       (buffer + header.count).assign(from: elements, count: count)
       return count
     }
+  }
+
+  public mutating func write(_ element: Element) -> Bool {
+    return write([element]) == 1
   }
 }
 
